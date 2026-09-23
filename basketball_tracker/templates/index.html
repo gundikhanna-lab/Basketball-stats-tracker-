@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basketball Stats Tracker</title>
+    <!-- Linking external CSS using Flask's url_for helper to construct static file path -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Main Navigation Bar -->
+    <nav>
+        <span class="nav-title">Basketball Stats Tracker</span>
+        <a href="/">Home</a>
+        <a href="/add">Add Session</a>
+        <a href="/stats">Stats</a>
+    </nav>
+
+    <div class="container">
+        <h2>Session History</h2>
+
+        <!-- 
+            JINJA ERROR CONDITIONAL:
+            If user enters invalid filter dates (e.g., start date after end date), 
+            Flask passes an 'error' string to render here above the filter form.
+        -->
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <!-- 
+            DATE FILTER FORM:
+            Sends selected date ranges to app.py's /filter route via HTTP POST request.
+            Uses standard HTML5 date inputs which send strings in ISO YYYY-MM-DD format.
+        -->
+        <form action="/filter" method="POST" class="filter-form">
+            <label>Filter by date:</label>
+            <input type="date" name="start_date">
+            <span>to</span>
+            <input type="date" name="end_date">
+            <button type="submit">Apply</button>
+            <!-- Clicking Clear resets the page by reloading the default '/' GET route -->
+            <a href="/" class="btn-clear">Clear</a>
+        </form>
+
+        <!-- 
+            DATA TABLE RENDER GUARD:
+            'sessions' is a list of database rows passed from app.py. 
+            If the list has items, render the HTML table; otherwise jump to the else block below.
+        -->
+        {% if sessions %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Opponent</th>
+                        <th>Position</th>
+                        <th>Points</th>
+                        <th>Assists</th>
+                        <th>Rebounds</th>
+                        <th>Attended</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 
+                        JINJA TUPLE ITERATION:
+                        Loops through every session tuple in the 'sessions' list.
+                        The tuple indices directly match the SELECT query order in database.py:
+                        s[0] = id (Primary Key)
+                        s[1] = date
+                        s[2] = opponent
+                        s[3] = points
+                        s[4] = assists
+                        s[5] = rebounds
+                        s[6] = attendance ("Yes"/"No")
+                        s[7] = concatenated positions string ("Point Guard, Small Forward")
+                    -->
+                    {% for s in sessions %}
+                    <tr>
+                        <td>{{ s[1] }}</td>
+                        <td>{{ s[2] }}</td>
+                        
+                        <!-- 
+                            INLINE TERNARY EXPRESSION:
+                            If s[7] is empty (e.g. no positions were linked), 
+                            display 'None' as fallback text instead of leaving a blank table cell.
+                        -->
+                        <td>{{ s[7] if s[7] else 'None' }}</td>
+                        
+                        <td>{{ s[3] }}</td>
+                        <td>{{ s[4] }}</td>
+                        <td>{{ s[5] }}</td>
+                        <td>{{ s[6] }}</td>
+                        
+                        <!-- 
+                            DYNAMIC ROUTE LINK:
+                            Injects the primary key s[0] into the URL path (/delete/1, /delete/2, etc.).
+                            This tells Flask exactly which database row to delete when clicked.
+                        -->
+                        <td><a href="/delete/{{ s[0] }}" class="btn-delete">Delete</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- FALLBACK UI: Displays when no games are logged or when a filter query returns 0 rows -->
+        {% else %}
+        <p class="no-data">No sessions logged yet. <a href="/add">Add one now.</a></p>
+        {% endif %}
+    </div>
+
+</body>
+</html>

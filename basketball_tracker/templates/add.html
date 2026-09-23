@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Session</title>
+    <!-- Dynamic CSS linking via Flask's static folder routing -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Main Site Navigation -->
+    <nav>
+        <span class="nav-title">Basketball Stats Tracker</span>
+        <a href="/">Home</a>
+        <a href="/add">Add Session</a>
+        <a href="/stats">Stats</a>
+    </nav>
+
+    <div class="container">
+        <h2>Log a New Session</h2>
+
+        <!-- 
+            SERVER-SIDE ERROR FEEDBACK:
+            If Python back-end validation fails in app.py (e.g. negative numbers or no checkboxes ticked),
+            Flask passes an 'error' variable string to render here above the input fields.
+        -->
+        {% if error %}
+        <p class="error" style="color: #ff6b6b; font-weight: bold; margin-bottom: 15px;">{{ error }}</p>
+        {% endif %}
+
+        <!-- 
+            FORM SUBMISSION:
+            Sends all user inputs to Flask's '/add' endpoint using an HTTP POST request.
+        -->
+        <form action="/add" method="POST" class="add-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date *</label>
+                    <!-- HTML5 date picker forces ISO standard YYYY-MM-DD input format -->
+                    <input type="date" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label>Opponent / Session Type *</label>
+                    <input type="text" name="opponent" placeholder="e.g. Lyn FK or Training" required>
+                </div>
+            </div>
+
+            <div class="form-row three">
+                <div class="form-group">
+                    <label>Points *</label>
+                    <!-- 
+                        CLIENT-SIDE VALIDATION:
+                        min="0" prevents users from typing negative numbers directly into the input field.
+                        required prevents submitting empty forms.
+                    -->
+                    <input type="number" name="points" placeholder="0" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Assists *</label>
+                    <input type="number" name="assists" placeholder="0" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Rebounds *</label>
+                    <input type="number" name="rebounds" placeholder="0" min="0" required>
+                </div>
+            </div>
+
+            <!-- 
+                DYNAMIC CHECKBOX GENERATION:
+                Loops through 'positions' fetched from the SQLite lookup table via db.get_positions().
+                pos[0] = position_id (Primary Key)
+                pos[1] = position_name (e.g., 'Point Guard')
+            -->
+            <div class="form-group">
+                <label>Position(s) Played *</label>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 8px;">
+                    {% for pos in positions %}
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; color: #ffffff; font-size: 14px;">
+                        <!-- 
+                            SHARED NAME PROPERTY:
+                            All checkboxes share name="position". This allows Flask's request.form.getlist('position')
+                            to collect all checked position IDs into a single Python list.
+                        -->
+                        <input type="checkbox" name="position" value="{{ pos[0] }}" style="width: 16px; height: 16px; accent-color: #FFD700;">
+                        {{ pos[1] }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Attendance selection dropdown -->
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Attended? *</label>
+                <select name="attendance">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                </select>
+            </div>
+
+            <p class="required-note">* All fields required. Negative values not allowed. Select at least one position.</p>
+
+            <div class="form-buttons">
+                <button type="submit" class="btn-save">Save Session</button>
+                <a href="/" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>
